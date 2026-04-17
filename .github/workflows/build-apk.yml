@@ -24,15 +24,73 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Expo prebuild (generates android/ folder)
+      - name: Expo prebuild
         run: npx expo prebuild --platform android --no-install
+
+      - name: Generate release keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/app/release.keystore \
+            -alias mediscan \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass mediscan123 -keypass mediscan123 \
+            -dname "CN=MediScan,O=MediScan,C=JO"
+
+      - name: Add signing config to gradle.properties
+        run: |
+          echo "MYAPP_UPLOAD_STORE_FILE=release.keystore" >> android/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_ALIAS=mediscan"          >> android/gradle.properties
+          echo "MYAPP_UPLOAD_STORE_PASSWORD=mediscan123"  >> android/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_PASSWORD=mediscan123"    >> android/gradle.properties
+
+      - name: Patch build.gradle to use release signing
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+
+          path = "android/app/build.gradle"
+          with open(path) as f:
+              content = f.read()
+
+          signing_block = """
+              release {
+                  if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                      storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                      storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                      keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                      keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+                  }
+              }
+          """
+
+          # Insert release signing config after debug signingConfig block
+          content = re.sub(
+              r'(signingConfigs\s*\{[^}]*debug\s*\{[^}]*\})',
+              r'\1' + signing_block,
+              content,
+              count=1
+          )
+
+          # Switch release buildType to use release signingConfig
+          content = re.sub(
+              r'(buildTypes\s*\{[^}]*release\s*\{)',
+              r'\1\n            signingConfig signingConfigs.release',
+              content,
+              count=1
+          )
+
+          with open(path, "w") as f:
+              f.write(content)
+
+          print("build.gradle patched OK")
+          EOF
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build debug APK
+      - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
         env:
           GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
 
@@ -40,5 +98,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MediScan-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
