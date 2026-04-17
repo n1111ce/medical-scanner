@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "MediScan",
+    "slug": "medical-scanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A237E"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mediscan.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used to scan patient data from medical screens."
+      }
+    },
+    "android": {
+      "package": "com.mediscan.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A237E"
+      },
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "MediScan needs camera access to scan patient data from medical screens."
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
