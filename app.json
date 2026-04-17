@@ -32,9 +32,9 @@
     },
     "plugins": [
       [
-        "expo-camera",
+        "react-native-vision-camera",
         {
-          "cameraPermission": "MediScan needs camera access to scan patient data from medical screens."
+          "cameraPermissionText": "MediScan needs camera access to scan patient data from medical screens."
         }
       ]
     ],
